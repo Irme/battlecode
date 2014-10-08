@@ -96,18 +96,22 @@ public class SoldierBehavior {
 	}
 	public static void moveToEnemyHQ(RobotController rc) throws Exception{
 		Direction toEnemy = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
-		if (rc.isActive() && rc.canMove(toEnemy)) {
+		SnailTrail.tryToMove(toEnemy, rc);
+		
+		/*if (rc.isActive() && rc.canMove(toEnemy)) {
 			rc.sneak(toEnemy);
-		}
+		}*/
 	}
 	public static boolean moveToLoc(MapLocation loc, RobotController rc) throws Exception{
-		Direction toDest = rc.getLocation().directionTo(loc);
+		SnailTrail.tryToMove(loc, rc);
+		return true;
+		/*Direction toDest = rc.getLocation().directionTo(loc);
 		if (rc.isActive() && rc.canMove(toDest)) {
 			rc.sneak(toDest);
 			return true;
 		}else{
 			return false;
-		}
+		}*/
 	}
 	public static void updateInternalMap(RobotController rc) throws Exception{
 		width = rc.getMapWidth();
