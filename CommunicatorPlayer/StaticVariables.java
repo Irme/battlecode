@@ -16,6 +16,8 @@ public class StaticVariables {
 	public static final int ROBOT_FLEEING_HEALTH_THRESHOLD = 30;
 	/** This variable is a threshold. If the health of a soldier exceeds this value, the soldier pursues the task he had before fleeing.**/
 	public static final int ROBOT_RECOVERING_HEALTH_THRESHOLD = 80;
+	/** This variable is a threshold. If the distance of an enemy is smaller then this value, the scout starts to flee **/
+	public static final int ROBOT_SCOUTING_DISTANCE_THRESHOLD = 16;
 	
 	/** integer representation for a non-existing-command**/
 	public static final int COMMAND_NOT_RECEIVED_YET = 0;
@@ -25,6 +27,8 @@ public class StaticVariables {
 	public static final int COMMAND_ASSEMBLE_AT_LOCATION = 2;
 	/** integer representation for a attacking-command**/
 	public static final int COMMAND_ATTACK_LOCATION = 3;
+	/** integer representation for a scouting-command**/
+	public static final int COMMAND_SCOUT_LOCATION = 4;
 	
 	/** this number indicates how many soldiers have to be considered, also indicates the maximum amount of spawn soldiers **/
 	public static final int MAX_ROBOTS_SPAWN = 20;
@@ -35,5 +39,5 @@ public class StaticVariables {
 	public static final int HQ_FIELD_HEIGHT = 7;
 	
 	
-	public static final double VERSION_NUMBER = 1.001d;
+	public static final double VERSION_NUMBER = 1.002d;
 }

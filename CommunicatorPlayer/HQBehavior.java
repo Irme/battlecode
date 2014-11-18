@@ -41,6 +41,8 @@ public class HQBehavior {
 	/** storage for the last target for the soldiers**/
 	public static MapLocation lastTarget;
 	
+	public static MapLocation enemyHQ;
+	
 	/** The current state of the HQ. Allows to separate logical areas**/
 	public static HQState state = HQState.INIT;
 	
@@ -74,9 +76,10 @@ public class HQBehavior {
 			MapMaker.makeMap(rc);
 			assemblyPositions = MapMaker.buildImportanceMap(2,rc);
 			state = HQState.DEFAULT;
+			enemyHQ = rc.senseEnemyHQLocation();
 			break;
 		case DEFAULT:
-			System.out.println(lifeCount + " try to spawn: " + rc.senseRobotCount());
+//			System.out.println(lifeCount + " try to spawn: " + rc.senseRobotCount());
 			tryToSpawn(rc);
 			deliverID(rc);
 			updateInteralRobotRepresentation(rc);
@@ -107,10 +110,18 @@ public class HQBehavior {
 					}
 				}
 			}
+			//send scout soldier
+			for(int i = 0; i < robots.length; i ++){
+				if(robots[i] != null){
+					sendCommand(enemyHQ, StaticVariables.ROBOT_COMMAND_CHANNEL_START+i, rc, StaticVariables.COMMAND_SCOUT_LOCATION);
+					System.out.println("sends scout command to " + i);
+					return;
+				}
+			}
 			break;
 		}
 		byteCodeSum +=  Clock.getBytecodeNum()-prevByteCode;
-		System.out.println(byteCodeSum/Clock.getRoundNum());
+//		System.out.println(byteCodeSum/Clock.getRoundNum());
 	}
 	
 	/**

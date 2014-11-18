@@ -32,6 +32,35 @@ public class MapMaker {
 			}
 		}
 	}
+//	public static void buildImportanceMap(RobotController rc){
+//		width = rc.getMapWidth();
+//		height = rc.getMapHeight();
+//		double[][] growths = rc.senseCowGrowth();
+//		importanceMap = new double[width][height];
+//		for(int i = 0; i < 1; i ++){
+//			for(int y = 1; y < height-1; y++){
+//				for(int x = 1; x < width-1; x ++){
+//					importanceMap[x-1][y] += growths[x][y];
+//					importanceMap[x][y-1] += growths[x][y];
+//					importanceMap[x-1][y-1] += growths[x][y];
+//					importanceMap[x+1][y] += growths[x][y];
+//					importanceMap[x][y+1] += growths[x][y];
+//					importanceMap[x+1][y+1] += growths[x][y];
+//					importanceMap[x+1][y-1] += growths[x][y];
+//					importanceMap[x-1][y+1] += growths[x][y];
+//				}
+//			}
+//		}
+//		for(int y = 0; y < height; y++){
+//			for(int x = 0; x < width; x ++){
+//				growths[x][y] = importanceMap[x][y];
+//			}
+//		}
+//		System.out.println("finishMap: " + Clock.getRoundNum());
+////		for(int i = 0; i < growths.length; i ++){
+////			System.out.println(Arrays.toString(growths[i]));
+////		}
+//	}
 	public static MapLocation[] buildImportanceMap(int num, RobotController rc){
 		importanceMap = new int[width][height];
 		int[][] tmpMap = new int[width][height];

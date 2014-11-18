@@ -20,7 +20,7 @@ public class SoldierBehavior {
 	 * These states are representing the the logical areas of a soldier.
 	 */
 	private enum SoldierState{
-		SPAWN,WAITING_FOR_COMMAND,BUILD_PASTR, ASSEMBLE, FLEEING;
+		SPAWN,WAITING_FOR_COMMAND,BUILD_PASTR, ASSEMBLE, FLEEING,SCOUTING;
 	}
 	
 	/**
@@ -79,6 +79,19 @@ public class SoldierBehavior {
 				moveRandomly(rc);	
 				lookForCommand(rc);
 			}
+		}else if
+		//The soldier moves to a certain location to scout for enemies
+		//He flees if the enemy is in shooting range
+		(state == SoldierState.SCOUTING){
+			count ++;
+			broadcastFeedback(rc);
+			int look = lookForNearestEnemySoldier(rc);
+			if(look == 1000){
+				SnailTrail.tryToMove(target, rc);
+			}else if(look < StaticVariables.ROBOT_SCOUTING_DISTANCE_THRESHOLD){
+				SnailTrail.tryToMove(backup, rc);
+			}
+			lookForCommand(rc);
 		}
 		//The soldier moves to a certain position he got from a command.
 		//Atm assembling and attacking is the same because they only move to a target location
@@ -179,6 +192,18 @@ public class SoldierBehavior {
 	}
 	
 	
+	public static int lookForNearestEnemySoldier(RobotController rc) throws GameActionException{
+		Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class,10000,rc.getTeam().opponent());
+		int min = 1000;
+		for(int i = 0; i < enemyRobots.length; i ++){
+			RobotInfo anEnemyInfo = rc.senseRobotInfo(enemyRobots[0]);
+			int curr = anEnemyInfo.location.distanceSquaredTo(rc.getLocation());
+			if(curr < min && anEnemyInfo.type == RobotType.SOLDIER){
+				min = curr;
+			}
+		}
+		return min;
+	}
 	private static boolean tryToShoot(RobotController rc) throws Exception {
 		if(rc.isActive()){
 			Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class,10000,rc.getTeam().opponent());
@@ -214,6 +239,8 @@ public class SoldierBehavior {
 			return SoldierState.ASSEMBLE;
 		case StaticVariables.COMMAND_BUILD_PASTR:
 			return SoldierState.BUILD_PASTR;
+		case StaticVariables.COMMAND_SCOUT_LOCATION:
+			return SoldierState.SCOUTING;
 		}
 		return next;
 	}
