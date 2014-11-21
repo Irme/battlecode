@@ -13,9 +13,9 @@ public class StaticVariables {
 	public static final int ROBOT_FEEDBACK_CHANNEL_START = 12000;
 	
 	/** This variable is a threshold. If the health of a soldier drops below this value, the soldier goes into the fleeing mode.**/
-	public static final int ROBOT_FLEEING_HEALTH_THRESHOLD = 60;
+	public static final int ROBOT_FLEEING_HEALTH_THRESHOLD = 30;
 	/** This variable is a threshold. If the health of a soldier exceeds this value, the soldier pursues the task he had before fleeing.**/
-	public static final int ROBOT_RECOVERING_HEALTH_THRESHOLD = 80;
+	public static final int ROBOT_RECOVERING_HEALTH_THRESHOLD = 55;
 	/** This variable is a threshold. If the distance of an enemy is smaller then this value, the scout starts to flee **/
 	public static final int ROBOT_SCOUTING_DISTANCE_THRESHOLD = 16;
 	
