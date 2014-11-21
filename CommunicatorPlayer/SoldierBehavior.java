@@ -46,6 +46,7 @@ public class SoldierBehavior {
 		// if the health of the soldier is below a certain threshold than switch to a fleeing state.
 		if(rc.getHealth() <= StaticVariables.ROBOT_FLEEING_HEALTH_THRESHOLD){
 			state = SoldierState.FLEEING;
+			currentCommand = 0;
 		}
 		
 		// If the soldier is fleeing he tries to get back to the location he spawned.

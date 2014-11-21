@@ -21,6 +21,10 @@ public class MapMaker {
 	public static int width,height;
 	public static int[][] map;
 	public static int[][] importanceMap;
+	public static double[][] growths;
+	public static MapLocation bestFound = null;
+	public static double bestGrowth = -Double.MAX_VALUE;
+	public static int searchProgress = 0;
 
 	public static void makeMap(RobotController rc){
 		width = rc.getMapWidth();
@@ -28,9 +32,15 @@ public class MapMaker {
 		map = new int[width][height];
 		for(int x = 0; x < width; x ++){
 			for(int y = 0; y < height; y++){
-				map[x][y] = rc.senseTerrainTile(new MapLocation(x,y)).ordinal();
+				map[x][y] = rc.senseTerrainTile(new MapLocation(x,y)).ordinal();			
 			}
 		}
+	}
+	public static void searchForSpots(RobotController rc, int linesToWork){
+		if(searchProgress == 0){
+			growths = rc.senseCowGrowth();
+		}
+		
 	}
 //	public static void buildImportanceMap(RobotController rc){
 //		width = rc.getMapWidth();

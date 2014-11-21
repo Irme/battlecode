@@ -110,14 +110,14 @@ public class HQBehavior {
 					}
 				}
 			}
-			//send scout soldier
-			for(int i = 0; i < robots.length; i ++){
-				if(robots[i] != null){
-					sendCommand(enemyHQ, StaticVariables.ROBOT_COMMAND_CHANNEL_START+i, rc, StaticVariables.COMMAND_SCOUT_LOCATION);
-					System.out.println("sends scout command to " + i);
-					return;
-				}
-			}
+//			//send scout soldier
+//			for(int i = 0; i < robots.length; i ++){
+//				if(robots[i] != null){
+//					sendCommand(enemyHQ, StaticVariables.ROBOT_COMMAND_CHANNEL_START+i, rc, StaticVariables.COMMAND_SCOUT_LOCATION);
+//					System.out.println("sends scout command to " + i);
+//					return;
+//				}
+//			}
 			break;
 		}
 		byteCodeSum +=  Clock.getBytecodeNum()-prevByteCode;
