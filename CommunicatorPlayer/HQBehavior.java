@@ -234,7 +234,7 @@ public class HQBehavior {
 	public static void tryToSpawn(RobotController rc) throws Exception{
 		if(rc.isActive()){
 			int count = rc.senseRobotCount();
-			if (count <= StaticVariables.MAX_ROBOTS_SPAWN) {
+			if (count < StaticVariables.MAX_ROBOTS_SPAWN) {
 				Direction toEnemy = rc.getLocation().directionTo(
 						rc.senseEnemyHQLocation());
 				if (rc.senseObjectAtLocation(rc.getLocation().add(toEnemy)) == null) {

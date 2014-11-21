@@ -206,15 +206,16 @@ public class SoldierBehavior {
 		return min;
 	}
 	private static boolean tryToShoot(RobotController rc) throws Exception {
+
 		if(rc.isActive()){
 			Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class,10000,rc.getTeam().opponent());
-			
+
 			if(enemyRobots.length > 0){
 				for(int i = 0; i < enemyRobots.length; i ++){
 					Robot current = enemyRobots[i];
 					RobotInfo anEnemyInfo;
 					anEnemyInfo = rc.senseRobotInfo(current);
-					if(anEnemyInfo.type != RobotType.HQ && anEnemyInfo.location.distanceSquaredTo(rc.getLocation())<rc.getType().attackRadiusMaxSquared){
+					if(anEnemyInfo.type != RobotType.HQ && anEnemyInfo.location.distanceSquaredTo(rc.getLocation())<=rc.getType().attackRadiusMaxSquared){
 						rc.attackSquare(anEnemyInfo.location);
 						return true;
 						
