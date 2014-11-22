@@ -1,4 +1,4 @@
-package communicator;
+package Communicator;
 import battlecode.common.*;
 
 import java.util.*;
@@ -20,6 +20,10 @@ public class RobotPlayer {
 				while(true){
 					SoldierBehavior.run(rc);
 					rc.yield();
+				}
+			case PASTR:
+				while(true){
+					PastrBehaviour.Pastr(rc);
 				}
 			default:
 				while(true){

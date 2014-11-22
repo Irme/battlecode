@@ -1,4 +1,4 @@
-package communicator;
+package Communicator;
 
 import java.util.ArrayList;
 import java.util.Random;

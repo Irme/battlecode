@@ -1,4 +1,4 @@
-package communicator;
+package Communicator;
 
 public class StaticVariables {
 

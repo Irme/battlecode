@@ -1,4 +1,4 @@
-package communicator;
+package Communicator;
 
 import java.util.ArrayList;
 
@@ -40,7 +40,7 @@ public class HQBehavior {
 	
 	/** storage for the last target for the soldiers**/
 	public static MapLocation lastTarget;
-	
+	public static OpponentModel Om = new OpponentModel();
 	public static MapLocation enemyHQ;
 	
 	/** The current state of the HQ. Allows to separate logical areas**/
@@ -55,11 +55,14 @@ public class HQBehavior {
 	public static ArrayList<RobotRepresentation> building= new ArrayList<RobotRepresentation>();
 	public static ArrayList<RobotRepresentation> free= new ArrayList<RobotRepresentation>();
 	
+	/**Opponent modelling variable: 1 = aggressive, 0 = defensive **/
+	static double OpponentModel = 0.5;
 	
 	/** debugging constant **/
 	static int lifeCount = 0;
 	/** debugging constant **/
 	static int byteCodeSum = 0;
+	
 	
 	/**
 	 * Contains the logic of the HQ. is called every round.
@@ -114,7 +117,8 @@ public class HQBehavior {
 			for(int i = 0; i < robots.length; i ++){
 				if(robots[i] != null){
 					sendCommand(enemyHQ, StaticVariables.ROBOT_COMMAND_CHANNEL_START+i, rc, StaticVariables.COMMAND_SCOUT_LOCATION);
-					System.out.println("sends scout command to " + i);
+					//System.out.println("sends scout command to " + i);
+					Om.scoutingData(rc);
 					return;
 				}
 			}
@@ -125,7 +129,7 @@ public class HQBehavior {
 	}
 	
 	/**
-	 * Reeds the feedback from all soldiers and updates the internal representation of the robots.
+	 * Reads the feedback from all soldiers and updates the internal representation of the robots.
 	 * This contains a counter that indicates if the soldier is alive, and also the map location
 	 * of the soldiers.
 	 * 

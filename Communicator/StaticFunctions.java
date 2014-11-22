@@ -1,4 +1,4 @@
-package communicator;
+package Communicator;
 
 import battlecode.common.*;
 

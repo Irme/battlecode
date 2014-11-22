@@ -1,4 +1,4 @@
-package communicator;
+package Communicator;
 
 import java.util.Arrays;
 import java.util.Collections;
