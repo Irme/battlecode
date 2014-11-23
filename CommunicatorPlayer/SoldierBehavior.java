@@ -1,4 +1,4 @@
-package communicator;
+package communicator2;
 
 import java.util.Random;
 
@@ -42,7 +42,7 @@ public class SoldierBehavior {
 	 */
 	public static void run(RobotController rc) throws Exception{
 		count = count % 10;
-		
+		//rc.setIndicatorString(0, ""+ currentCommand + " " + (state == SoldierState.SPAWN?"waitsforID":"") + (state == SoldierState.WAITING_FOR_COMMAND?"waitsforCommand":"") +  (state == SoldierState.BUILD_PASTR?"tries to build pastr":""));
 		// if the health of the soldier is below a certain threshold than switch to a fleeing state.
 		if(rc.getHealth() <= StaticVariables.ROBOT_FLEEING_HEALTH_THRESHOLD){
 			state = SoldierState.FLEEING;
@@ -199,7 +199,7 @@ public class SoldierBehavior {
 		for(int i = 0; i < enemyRobots.length; i ++){
 			RobotInfo anEnemyInfo = rc.senseRobotInfo(enemyRobots[0]);
 			int curr = anEnemyInfo.location.distanceSquaredTo(rc.getLocation());
-			if(curr < min && anEnemyInfo.type == RobotType.SOLDIER){
+			if(curr < min && (anEnemyInfo.type == RobotType.SOLDIER || anEnemyInfo.type == RobotType.HQ)){
 				min = curr;
 			}
 		}

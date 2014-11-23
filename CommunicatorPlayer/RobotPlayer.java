@@ -1,4 +1,4 @@
-package communicator;
+package communicator2;
 import battlecode.common.*;
 
 import java.util.*;

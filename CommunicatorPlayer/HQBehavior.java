@@ -1,4 +1,4 @@
-package communicator;
+package communicator2;
 
 import java.util.ArrayList;
 
@@ -42,6 +42,7 @@ public class HQBehavior {
 	public static MapLocation lastTarget;
 	
 	public static MapLocation enemyHQ;
+	public static MapLocation thisPos;
 	
 	/** The current state of the HQ. Allows to separate logical areas**/
 	public static HQState state = HQState.INIT;
@@ -61,6 +62,7 @@ public class HQBehavior {
 	/** debugging constant **/
 	static int byteCodeSum = 0;
 	
+	
 	/**
 	 * Contains the logic of the HQ. is called every round.
 	 * 
@@ -72,11 +74,15 @@ public class HQBehavior {
 		lifeCount ++;
 		switch (state) {
 		case INIT:
-			// builds internal map which is currently unused
-			MapMaker.makeMap(rc);
-			assemblyPositions = MapMaker.buildImportanceMap(2,rc);
-			state = HQState.DEFAULT;
 			enemyHQ = rc.senseEnemyHQLocation();
+			thisPos = rc.getLocation();
+			MapMaker.searchForSpots(rc, 0);
+			// builds internal map which is currently unused
+//			MapMaker.makeMap(rc);
+//			assemblyPositions = MapMaker.buildImportanceMap(2,rc);
+			assemblyPositions = new MapLocation[1];
+			assemblyPositions[0] = MapMaker.bestFound;
+			state = HQState.DEFAULT;
 			break;
 		case DEFAULT:
 //			System.out.println(lifeCount + " try to spawn: " + rc.senseRobotCount());
@@ -85,39 +91,42 @@ public class HQBehavior {
 			updateInteralRobotRepresentation(rc);
 			MapLocation[] enemyPastr = rc.sensePastrLocations(rc.getTeam().opponent());
 			
-			// the command structure is currently working as a Flip-flop this means that an attacking command is send as 
-			// a attack command, then as a assembling command than as an attacking command, then as an assembling command
-			// and so on.
-			// this is related to the Arraylists which store the current representation and the commands they are currently processing.
-			// this is just at the beginning to test how the byte code is reduced by not sending redundantly commands.
-			// this will change to a new command structure and should be incorporated into the internal states.
 			if(enemyPastr.length > 0){
-				deliverCommand(enemyPastr[0], rc, StaticVariables.COMMAND_ATTACK_LOCATION);			
-				if(lastTarget != null && enemyPastr[0].x != lastTarget.x && enemyPastr[0].y != lastTarget.y ){
-					deliverCommand(enemyPastr[0], rc, StaticVariables.COMMAND_ASSEMBLE_AT_LOCATION);
+				if(lastTarget == null){
+					assignSoldiersToGroup(free,attacking,0,100);
+					assignSoldiersToGroup(assembling,attacking,0,100);
+					HQBehavior.deliverCommandToGroup(attacking, rc, StaticVariables.COMMAND_ATTACK_LOCATION, enemyPastr[0]);
+					lastTarget = enemyPastr[0];
+				}else if(enemyPastr[0].x != lastTarget.x && enemyPastr[0].y != lastTarget.y){
+					lastTarget = null;
+				}else if(free.size() > 0 || assembling.size()>0 ){
+					assignSoldiersToGroup(free,attacking,0,100);
+					assignSoldiersToGroup(assembling,attacking,0,100);
+					HQBehavior.deliverCommandToGroup(attacking, rc, StaticVariables.COMMAND_ATTACK_LOCATION, enemyPastr[0]);
+					lastTarget = enemyPastr[0];
 				}
-				lastTarget = enemyPastr[0];
 			}else{
-				//send to all robots an assemble command. The position is retrieved from the MapMaker.
-				deliverCommand(assemblyPositions[0], rc, StaticVariables.COMMAND_ASSEMBLE_AT_LOCATION);
+				int size = assembling.size();
+				assignSoldiersToGroup(free,assembling,0,100);
+				assignSoldiersToGroup(attacking,assembling,0,100);
+				if(size != assembling.size()){
+					HQBehavior.deliverCommandToGroup(assembling, rc, StaticVariables.COMMAND_ASSEMBLE_AT_LOCATION, assemblyPositions[0]);
+				}
 			}
 			// after a while send a build-pasture-command to the last spawned soldier.
 			if(lifeCount >= 400 &&rc.sensePastrLocations(rc.getTeam()).length == 0){
-				for(int i = robots.length-1; i >= 0; i --){
+				assignSoldiersToGroup(assembling,building,0,1);
+				deliverCommandToGroup(building,rc,StaticVariables.COMMAND_BUILD_PASTR,assemblyPositions[0]);
+			}
+			//send scout soldier
+			if(enemyPastr.length == 0){
+				for(int i = 0; i < robots.length; i ++){
 					if(robots[i] != null){
-						sendCommand(assemblyPositions[0], StaticVariables.ROBOT_COMMAND_CHANNEL_START+i, rc, StaticVariables.COMMAND_BUILD_PASTR);
-						return;
+						sendCommand(enemyHQ, StaticVariables.ROBOT_COMMAND_CHANNEL_START+i, rc, StaticVariables.COMMAND_SCOUT_LOCATION);
+						break;
 					}
 				}
 			}
-//			//send scout soldier
-//			for(int i = 0; i < robots.length; i ++){
-//				if(robots[i] != null){
-//					sendCommand(enemyHQ, StaticVariables.ROBOT_COMMAND_CHANNEL_START+i, rc, StaticVariables.COMMAND_SCOUT_LOCATION);
-//					System.out.println("sends scout command to " + i);
-//					return;
-//				}
-//			}
 			break;
 		}
 		byteCodeSum +=  Clock.getBytecodeNum()-prevByteCode;
@@ -161,51 +170,40 @@ public class HQBehavior {
 			}
 		}
 	}
-	
-	/**
-	 * Soldiers are grouped by the task they currently have.
-	 * To deliver a new task the robots are moved from any list to the target list
-	 * that represents a certain command. 
-	 * 
-	 * @param loc of the attack, or assemble move
-	 * @param rc
-	 * @param command
-	 * @throws Exception
-	 */
-	public static void deliverCommand(MapLocation loc, RobotController rc, int command) throws Exception{
-		switch(command){
-		case StaticVariables.COMMAND_ASSEMBLE_AT_LOCATION:
-			deliverCommandToGroup(loc,HQBehavior.attacking,HQBehavior.assembling,command,rc);
-			deliverCommandToGroup(loc,HQBehavior.free,HQBehavior.assembling,command,rc);
-			break;
-		case StaticVariables.COMMAND_ATTACK_LOCATION:
-			deliverCommandToGroup(loc,HQBehavior.assembling,HQBehavior.attacking,command,rc);
-			deliverCommandToGroup(loc,HQBehavior.free,HQBehavior.attacking,command,rc);
-			break;
-		case StaticVariables.COMMAND_BUILD_PASTR:
-			break;
-		}
-	}
 
 	/**
-	 * Moves all soldiers from one list to the other and sends a command to the moved
-	 * soldiers.
-	 * 
-	 * @param loc is the target maplocation delivered to the soldiers.
-	 * @param from is the arraylist containing the soldiers with the old command.
-	 * @param to is the arraylist the soldiers are transfered to.
-	 * @param command to be send.
+	 * Sends the same command to every soldier in a certain group.
+	 * @param group
 	 * @param rc
+	 * @param command
+	 * @param loc
 	 * @throws Exception
 	 */
-	public static void deliverCommandToGroup(MapLocation loc, ArrayList<RobotRepresentation> from, ArrayList<RobotRepresentation> to, int command, RobotController rc) throws Exception{
-		while(from.size() != 0){
-			RobotRepresentation rR = from.get(0);
-			sendCommand(loc, StaticVariables.ROBOT_COMMAND_CHANNEL_START+rR.iD, rc, StaticVariables.COMMAND_ASSEMBLE_AT_LOCATION);
-			to.add(rR);
+	public static void deliverCommandToGroup(ArrayList<RobotRepresentation> group, RobotController rc, int command, MapLocation loc) throws Exception{
+		for(int i = 0; i < group.size(); i ++){
+			sendCommand(loc, StaticVariables.ROBOT_COMMAND_CHANNEL_START+group.get(i).iD, rc, command);
+		}
+	}
+	/**
+	 * Moves N soldiers from one list to the other.
+	 * @param from
+	 * @param to
+	 * @param amount of soldiers to be moved.
+	 */
+	public static void assignSoldiersToGroup( ArrayList<RobotRepresentation> from, ArrayList<RobotRepresentation> to, int minFrom, int minTo){
+		int possible = from.size()-minFrom;
+		int wanted = Math.min(possible, minTo-to.size());
+		if(from.size() == 0){
+			return;
+		}
+		for(int i = 0; i < wanted; i ++){
+			to.add(from.get(i));
+		}
+		for(int i = 0; i < wanted; i ++){
 			from.remove(0);
 		}
 	}
+
 	
 	/**
 	 * Reads the broadcast channel allocated for the robot id's.
