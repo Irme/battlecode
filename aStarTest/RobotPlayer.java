@@ -16,7 +16,16 @@ public class RobotPlayer {
 			if(rc.getType() == RobotType.HQ){
 				try {
 					while(rc.isActive()){
-						rc.spawn(getRandomDir(rc));
+						//if(rc.senseRobotCount() < 1){
+							//MapSampling ms = new MapSampling(rc);
+							// ArrayList<ExtendedTile> exTiles = ms.getExtendTileList();
+							// System.out.println("Sampled map:");
+							// for(int i = 0; i < exTiles.size(); ++i){
+							// 	System.out.println(exTiles.toString());
+							// }
+
+							rc.spawn(getRandomDir(rc));
+						// }
 						rc.yield();
 					}
 				} catch (GameActionException e) {
