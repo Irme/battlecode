@@ -59,6 +59,7 @@ public class A_Star {
 					 *  go through the next tiles in the path until a tile is found that isn't occupied
 					 *  then go to this tile with snail trail and move on with walking the calculated path
 					 */
+					// TODO to something if soldier gets stuck for a while / the next tile won't get free
 					if(path.size() == 1){ // next tile is the last one
 						return;
 					}else{
@@ -76,7 +77,7 @@ public class A_Star {
 									boolean nextLocReached = false;
 									while(!nextLocReached){
 										SnailTrail.tryToMove(nextLocAfter, rc);
-										if(rc.getLocation() == nextLocAfter){
+										if(locEquals(rc.getLocation(), nextLocAfter)){
 											nextLocReached = true;
 										}
 									}
@@ -156,6 +157,14 @@ public class A_Star {
 			return newNode;
 		} else{
 			return null;
+		}
+	}
+	
+	private static boolean locEquals(MapLocation loc1, MapLocation loc2){
+		if(loc1.x == loc2.x && loc1.y == loc2.y){
+			return true;
+		}else{
+			return false;
 		}
 	}
 	
