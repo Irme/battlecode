@@ -1,5 +1,6 @@
 package communicator2;
 
+import java.util.LinkedList;
 import java.util.Random;
 
 import battlecode.common.*;
@@ -15,6 +16,8 @@ public class SoldierBehavior {
 	static int currentCommand;
 	static MapLocation target;
 	static MapLocation backup;
+	
+	static LinkedList<MapLocation> path = null;
 	
 	/**
 	 * These states are representing the the logical areas of a soldier.
@@ -55,7 +58,8 @@ public class SoldierBehavior {
 			count ++;
 			broadcastFeedback(rc);
 			// SnailTrail.tryToMove(backup, rc);
-			A_Star.moveTo(backup, rc);
+			// A_Star.moveTo(backup, rc);
+			move(backup, rc);
 			if(rc.getHealth() >= StaticVariables.ROBOT_RECOVERING_HEALTH_THRESHOLD){
 				state = SoldierState.WAITING_FOR_COMMAND;
 			}
@@ -90,10 +94,12 @@ public class SoldierBehavior {
 			int look = lookForNearestEnemySoldier(rc);
 			if(look == 1000){
 				// SnailTrail.tryToMove(target, rc);
-				A_Star.moveTo(target, rc);
+				// A_Star.moveTo(target, rc);
+				move(target, rc);
 			}else if(look < StaticVariables.ROBOT_SCOUTING_DISTANCE_THRESHOLD){
 				// SnailTrail.tryToMove(backup, rc);
-				A_Star.moveTo(backup, rc);
+				// A_Star.moveTo(backup, rc);
+				move(backup, rc);
 			}
 			lookForCommand(rc);
 		}
@@ -107,7 +113,8 @@ public class SoldierBehavior {
 			if(rc.isActive()){
 				if(!tryToShoot(rc)){
 					// SnailTrail.tryToMove(target, rc);
-					A_Star.moveTo(target, rc);
+					// A_Star.moveTo(target, rc);
+					move(target, rc);
 					lookForCommand(rc);
 				}
 			}
@@ -122,7 +129,8 @@ public class SoldierBehavior {
 					rc.construct(RobotType.PASTR);
 				}	
 				// SnailTrail.tryToMove(target, rc);
-				A_Star.moveTo(target, rc);
+				// A_Star.moveTo(target, rc);
+				move(target, rc);
 				lookForCommand(rc);
 				
 			}
@@ -267,5 +275,107 @@ public class SoldierBehavior {
 			rc.broadcast(StaticVariables.ROBOT_ID_CHANNEL, 0);
 		}
 		return id;
+	}
+	
+	public static void move(MapLocation goal, RobotController rc) {
+		rc.setIndicatorString(2, "Target: " + goal.x + ", " + goal.y);
+		
+		boolean pathNull;
+		boolean pathEmpty = false;
+		boolean thisGoalNotPathGoal = false;
+		
+		
+		pathNull = path == null;
+		if(!pathNull){
+			pathEmpty = path.isEmpty();
+			if(!pathEmpty){
+				thisGoalNotPathGoal = !locEquals(goal, path.getFirst());
+			}
+		}
+		if(pathNull || pathEmpty || thisGoalNotPathGoal){
+			String s = "";
+			if(pathNull)
+				s += " null";
+			else if(pathEmpty)
+				s += " path empty";
+			else if(thisGoalNotPathGoal)
+				s += " wrong goal";
+			rc.setIndicatorString(0, "New path calculated because of" + s + " on round " + Clock.getRoundNum());
+			rc.setIndicatorString(3, "calculatePath");
+			path = A_Star.searchPathTo(goal, rc);
+			rc.setIndicatorString(1, "pathcalculated");
+		}else{
+			// rc.setIndicatorString(0, "");
+		}
+		
+		MapLocation nextLoc = path.getLast();
+
+		Direction dirToMove = rc.getLocation().directionTo(nextLoc);
+		if(!rc.isActive()){
+			// do nothing -> don't move
+		}
+		else if (rc.canMove(dirToMove)) {
+			try {
+				rc.move(dirToMove);
+				path.removeLast();
+			} catch (GameActionException e) {
+				e.printStackTrace();
+			}
+		} else {
+			/*
+			 * walking around the obstacle: go through the next tiles in the
+			 * path until a tile is found that isn't occupied then go to this
+			 * tile with snail trail and move on with walking the calculated
+			 * path
+			 */
+			// TODO to something if soldier gets stuck for a while / the next
+			// tile won't get free
+			if (path.size() == 1) { // next tile is the last one
+				return;
+			} else {
+				boolean freeTileFound = false;
+				int counter = 0;
+				while (!freeTileFound && counter <= path.size() - 2) {
+					int nextTileIndex = path.size() - 2 - counter; // size - 1
+																	// is the
+																	// current
+																	// tile
+					counter++;
+					MapLocation nextLocAfter = path.get(nextTileIndex);
+					try {
+						// TODO check if nextLocAfter is in sensorRange (how can
+						// I find out the sensor range?)
+						// if it isn't we have a problem... just return for the
+						// present until a solution is found
+						GameObject objectOnNextLocAfter = rc
+								.senseObjectAtLocation(nextLocAfter);
+						if (objectOnNextLocAfter == null) {
+							boolean nextLocReached = false;
+							while (!nextLocReached) {
+								SnailTrail.tryToMove(nextLocAfter, rc);
+								if (locEquals(rc.getLocation(), nextLocAfter)) {
+									nextLocReached = true;
+								}
+							}
+							freeTileFound = true;
+						}
+					} catch (GameActionException e) {
+						// TODO check sensor range before and find out what to
+						// do, if there is no free tile on the path within
+						// sensor range...
+						e.printStackTrace();
+						return;
+					}
+				}
+			}
+		}
+	}
+	
+	private static boolean locEquals(MapLocation loc1, MapLocation loc2){
+		if(loc1.x == loc2.x && loc1.y == loc2.y){
+			return true;
+		}else{
+			return false;
+		}
 	}
 }
