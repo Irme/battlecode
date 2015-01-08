@@ -22,7 +22,7 @@ public class RobotPlayer {
 					rc.yield();
 				}
 			case PASTR:
-				while(true){
+				while(true){ 
 					PastrBehaviour.Pastr(rc);
 				}
 			default:
