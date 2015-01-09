@@ -10,12 +10,15 @@ public class SoldierBehavior {
 	
 	static Direction[] directions = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST};
 	
+	final static int MOVE_INDICATOR = 0;
+	final static int STATE_INDICATOR = 1;
 	
 	static int[][] map;
 	static int width,height;
 	static int currentCommand;
 	static MapLocation target;
 	static MapLocation backup;
+	static A_Star astar = new A_Star();
 	
 	static LinkedList<MapLocation> path = null;
 	
@@ -50,6 +53,7 @@ public class SoldierBehavior {
 		if(rc.getHealth() <= StaticVariables.ROBOT_FLEEING_HEALTH_THRESHOLD){
 			state = SoldierState.FLEEING;
 			currentCommand = 0;
+			updateStateIndicator(rc);
 		}
 		
 		// If the soldier is fleeing he tries to get back to the location he spawned.
@@ -62,6 +66,7 @@ public class SoldierBehavior {
 			move(backup, rc);
 			if(rc.getHealth() >= StaticVariables.ROBOT_RECOVERING_HEALTH_THRESHOLD){
 				state = SoldierState.WAITING_FOR_COMMAND;
+				updateStateIndicator(rc);
 			}
 		}
 		
@@ -75,6 +80,7 @@ public class SoldierBehavior {
 			if(iD != 0){
 				state = SoldierState.WAITING_FOR_COMMAND;
 				backup = rc.getLocation();
+				updateStateIndicator(rc);
 			}
 		}
 		//The soldier moves randomly until he gets a command from the HQ.
@@ -150,6 +156,7 @@ public class SoldierBehavior {
 			currentCommand = command;
 			target = StaticFunctions.intToLoc(command);
 			state = interpreteCommand(command/10000);
+			updateStateIndicator(rc);
 		}
 	}
 	
@@ -278,8 +285,6 @@ public class SoldierBehavior {
 	}
 	
 	public static void move(MapLocation goal, RobotController rc) {
-		rc.setIndicatorString(2, "Target: " + goal.x + ", " + goal.y);
-		
 		boolean pathNull;
 		boolean pathEmpty = false;
 		boolean thisGoalNotPathGoal = false;
@@ -289,7 +294,7 @@ public class SoldierBehavior {
 		if(!pathNull){
 			pathEmpty = path.isEmpty();
 			if(!pathEmpty){
-				thisGoalNotPathGoal = !locEquals(goal, path.getFirst());
+				thisGoalNotPathGoal = !StaticFunctions.locEquals(goal, path.getFirst());
 			}
 		}
 		if(pathNull || pathEmpty || thisGoalNotPathGoal){
@@ -300,10 +305,11 @@ public class SoldierBehavior {
 				s += " path empty";
 			else if(thisGoalNotPathGoal)
 				s += " wrong goal";
-			rc.setIndicatorString(0, "New path calculated because of" + s + " on round " + Clock.getRoundNum());
-			rc.setIndicatorString(3, "calculatePath");
-			path = A_Star.searchPathTo(goal, rc);
-			rc.setIndicatorString(1, "pathcalculated");
+			// rc.setIndicatorString(0, "New path calculated because of" + s + " on round " + Clock.getRoundNum());
+			rc.setIndicatorString(MOVE_INDICATOR, "calculating path to " + StaticFunctions.locToString(goal));
+			path = astar.searchPathTo(goal, rc);
+			
+			rc.setIndicatorString(MOVE_INDICATOR, "path calculated to " + StaticFunctions.locToString(goal));
 		}else{
 			// rc.setIndicatorString(0, "");
 		}
@@ -331,7 +337,7 @@ public class SoldierBehavior {
 			// TODO to something if soldier gets stuck for a while / the next
 			// tile won't get free
 			if (path.size() == 1) { // next tile is the last one
-				return;
+				path = null;
 			} else {
 				boolean freeTileFound = false;
 				int counter = 0;
@@ -340,6 +346,7 @@ public class SoldierBehavior {
 																	// is the
 																	// current
 																	// tile
+					
 					counter++;
 					MapLocation nextLocAfter = path.get(nextTileIndex);
 					try {
@@ -353,11 +360,16 @@ public class SoldierBehavior {
 							boolean nextLocReached = false;
 							while (!nextLocReached) {
 								SnailTrail.tryToMove(nextLocAfter, rc);
-								if (locEquals(rc.getLocation(), nextLocAfter)) {
+								if (StaticFunctions.locEquals(rc.getLocation(), nextLocAfter)) {
 									nextLocReached = true;
 								}
 							}
 							freeTileFound = true;
+						}else{
+							if(nextTileIndex == 0){ // the goal tile
+								path = null;
+								return;
+							}
 						}
 					} catch (GameActionException e) {
 						// TODO check sensor range before and find out what to
@@ -371,11 +383,8 @@ public class SoldierBehavior {
 		}
 	}
 	
-	private static boolean locEquals(MapLocation loc1, MapLocation loc2){
-		if(loc1.x == loc2.x && loc1.y == loc2.y){
-			return true;
-		}else{
-			return false;
-		}
+	private static void updateStateIndicator(RobotController rc){
+		rc.setIndicatorString(STATE_INDICATOR, "Current command: " + state);
 	}
+
 }

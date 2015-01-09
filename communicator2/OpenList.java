@@ -1,14 +1,14 @@
 package communicator2;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 
 public class OpenList {
-	ArrayList<Node> bestNodes;
+	LinkedList<Node> bestNodes;
 	Node[][] openListMap;
 	
 	public OpenList(int width, int height){
 		openListMap = new Node[width][height];
-		bestNodes = new ArrayList<Node>();
+		bestNodes = new LinkedList<Node>();
 	}
 	
 	public boolean isEmpty(){
