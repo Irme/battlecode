@@ -1,4 +1,4 @@
-package Communicator;
+package communicator2;
 
 import java.util.Random;
 
@@ -42,10 +42,11 @@ public class SoldierBehavior {
 	 */
 	public static void run(RobotController rc) throws Exception{
 		count = count % 10;
-		
+		//rc.setIndicatorString(0, ""+ currentCommand + " " + (state == SoldierState.SPAWN?"waitsforID":"") + (state == SoldierState.WAITING_FOR_COMMAND?"waitsforCommand":"") +  (state == SoldierState.BUILD_PASTR?"tries to build pastr":""));
 		// if the health of the soldier is below a certain threshold than switch to a fleeing state.
 		if(rc.getHealth() <= StaticVariables.ROBOT_FLEEING_HEALTH_THRESHOLD){
 			state = SoldierState.FLEEING;
+			currentCommand = 0;
 		}
 		
 		// If the soldier is fleeing he tries to get back to the location he spawned.
@@ -53,7 +54,7 @@ public class SoldierBehavior {
 		if(state == SoldierState.FLEEING){
 			count ++;
 			broadcastFeedback(rc);
-			SnailTrail.tryToMove(backup, rc);
+			SnailTrail.move(backup, rc.getLocation(), rc);
 			if(rc.getHealth() >= StaticVariables.ROBOT_RECOVERING_HEALTH_THRESHOLD){
 				state = SoldierState.WAITING_FOR_COMMAND;
 			}
@@ -87,9 +88,9 @@ public class SoldierBehavior {
 			broadcastFeedback(rc);
 			int look = lookForNearestEnemySoldier(rc);
 			if(look == 1000){
-				SnailTrail.tryToMove(target, rc);
+				SnailTrail.move(target, rc.getLocation(), rc);
 			}else if(look < StaticVariables.ROBOT_SCOUTING_DISTANCE_THRESHOLD){
-				SnailTrail.tryToMove(backup, rc);
+				SnailTrail.move(backup, rc.getLocation(), rc);;
 			}
 			lookForCommand(rc);
 		}
@@ -102,7 +103,7 @@ public class SoldierBehavior {
 			broadcastFeedback(rc);
 			if(rc.isActive()){
 				if(!tryToShoot(rc)){
-					SnailTrail.tryToMove(target, rc);
+					SnailTrail.move(target, rc.getLocation(), rc);;
 					lookForCommand(rc);
 				}
 			}
@@ -116,7 +117,7 @@ public class SoldierBehavior {
 				if(rc.getLocation().equals(target) && rc.isActive()){
 					rc.construct(RobotType.PASTR);
 				}	
-				SnailTrail.tryToMove(target, rc);
+				SnailTrail.move(target, rc.getLocation(), rc);;
 				lookForCommand(rc);
 				
 			}
@@ -198,22 +199,23 @@ public class SoldierBehavior {
 		for(int i = 0; i < enemyRobots.length; i ++){
 			RobotInfo anEnemyInfo = rc.senseRobotInfo(enemyRobots[0]);
 			int curr = anEnemyInfo.location.distanceSquaredTo(rc.getLocation());
-			if(curr < min && anEnemyInfo.type == RobotType.SOLDIER){
+			if(curr < min && (anEnemyInfo.type == RobotType.SOLDIER || anEnemyInfo.type == RobotType.HQ)){
 				min = curr;
 			}
 		}
 		return min;
 	}
 	private static boolean tryToShoot(RobotController rc) throws Exception {
+
 		if(rc.isActive()){
 			Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class,10000,rc.getTeam().opponent());
-			
+
 			if(enemyRobots.length > 0){
 				for(int i = 0; i < enemyRobots.length; i ++){
 					Robot current = enemyRobots[i];
 					RobotInfo anEnemyInfo;
 					anEnemyInfo = rc.senseRobotInfo(current);
-					if(anEnemyInfo.type != RobotType.HQ && anEnemyInfo.location.distanceSquaredTo(rc.getLocation())<rc.getType().attackRadiusMaxSquared){
+					if(anEnemyInfo.type != RobotType.HQ && anEnemyInfo.location.distanceSquaredTo(rc.getLocation())<=rc.getType().attackRadiusMaxSquared){
 						rc.attackSquare(anEnemyInfo.location);
 						return true;
 						

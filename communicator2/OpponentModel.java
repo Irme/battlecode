@@ -1,4 +1,4 @@
-package Communicator;
+package communicator2;
 
 import battlecode.common.GameObject;
 import battlecode.common.Robot;
@@ -25,15 +25,13 @@ public class OpponentModel {
 	public void scoutingData(RobotController rc){
 		Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class,10000,rc.getTeam().opponent());
 		//System.out.println(enemyRobots.length);
-		if(enemyRobots.length == 0){
-			//Do nothing? Yield?
-		} else {
+		if(enemyRobots.length != 0){
 			newhealth = rc.getHealth();
 			if(newhealth < health){
-				setOpponent(opponent+ 0.001);
+				setOpponentModel(opponent+ 0.005);
 			}
-			else if((newhealth <= health) ){
-				setOpponent(opponent - 0.001);
+			else if((newhealth >= health) ){
+				setOpponentModel(opponent - 0.005);
 			}
 
 
@@ -45,22 +43,22 @@ public class OpponentModel {
 	public void pastureData(RobotController rc){
 		pnewhealth = rc.getHealth();
 		if(pnewhealth < phealth){
-			setOpponent(opponent+ 0.01);
+			setOpponentModel(opponent+ 0.05);
 		}
 		//TODO: Implement something if health didn't decrease and enemy seen.
-		else if(pnewhealth <= health){
-			setOpponent(opponent - 0.01);
+		else if(pnewhealth >= phealth){
+			setOpponentModel(opponent - 0.05);
 		}
 		phealth = pnewhealth;
 
 	}
 
 
-	public double getOpponent() {
+	public double getOpponentModel() {
 		return opponent;
 	}
 
-	public void setOpponent(double opponent) {
+	public void setOpponentModel(double opponent) {
 		OpponentModel.opponent = opponent;
 		//System.out.println(OpponentModel.opponent);
 	}
