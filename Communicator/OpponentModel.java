@@ -51,8 +51,6 @@ public class OpponentModel {
 		else if(pnewhealth <= health){
 			setOpponent(opponent - 0.01);
 		}
-
-
 		phealth = pnewhealth;
 
 	}
