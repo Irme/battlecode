@@ -1,4 +1,4 @@
-package Communicator;
+package communicator2;
 
 
 import battlecode.common.RobotController;
