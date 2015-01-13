@@ -9,7 +9,7 @@ public class SoldierBehavior {
 	
 	static Direction[] directions = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST};
 	
-	
+	public static OpponentModel om = new OpponentModel();
 	static int[][] map;
 	static int width,height;
 	static int currentCommand;
@@ -42,6 +42,7 @@ public class SoldierBehavior {
 	 */
 	public static void run(RobotController rc) throws Exception{
 		count = count % 10;
+		om.scoutingData(rc);
 		//rc.setIndicatorString(0, ""+ currentCommand + " " + (state == SoldierState.SPAWN?"waitsforID":"") + (state == SoldierState.WAITING_FOR_COMMAND?"waitsforCommand":"") +  (state == SoldierState.BUILD_PASTR?"tries to build pastr":""));
 		// if the health of the soldier is below a certain threshold than switch to a fleeing state.
 		if(rc.getHealth() <= StaticVariables.ROBOT_FLEEING_HEALTH_THRESHOLD){

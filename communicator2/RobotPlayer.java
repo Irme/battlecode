@@ -20,13 +20,12 @@ public class RobotPlayer {
 				}
 			case SOLDIER:
 				while(true){
-					om.scoutingData(rc);
 					SoldierBehavior.run(rc);
 					rc.yield();
 				}
 			case PASTR:
 				while(true){
-					om.pastureData(rc);
+					PastrBehaviour.Pastr(rc);
 					rc.yield();
 				}
 			default:

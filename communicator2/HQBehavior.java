@@ -47,6 +47,8 @@ public class HQBehavior {
 	static int lifeCount = 0;
 	/** debugging constant **/
 	static int byteCodeSum = 0;
+	
+	public static double opponent = 0.5;
 
 
 	/**
@@ -162,14 +164,17 @@ public class HQBehavior {
 	}
 
 	public static void adaptToOpponent(RobotController rc,Group[] groups ) throws Exception{
-		om.scoutingData(rc);
 		int count = rc.senseRobotCount();
 		if(rc.senseTeamMilkQuantity(rc.getTeam()) < rc.senseTeamMilkQuantity(rc.getTeam().opponent()))
 		{
 			System.out.println("Opponent has more milk :(");
 			groups[1].sendCommandToGroup(rc.sensePastrLocations(rc.getTeam().opponent())[0],StaticVariables.COMMAND_ATTACK_LOCATION , rc);
+			 if(groups[3].getSize() == 0){
+					groups[1].assignToOtherGroup(rc, groups[3], 1, 1);
+			 }
 		}
-		if(om.getOpponentModel() < 0.5){//Defensive
+	
+		if(opponent <= 0.5){//Defensive
 			System.out.println("Defensive");
 			System.out.println("Adding to group 2"); //Group 2-6 is PASTR building
 			if(groups[2].getSize() == 0){
@@ -189,7 +194,7 @@ public class HQBehavior {
 				groups[2].assignToOtherGroup(rc, groups[1], 1, 1);
 			}
 		}
-		System.out.println(om.getOpponentModel());
+		System.out.println("Current opponentmodel value: " +opponent);
 	}
 
 
