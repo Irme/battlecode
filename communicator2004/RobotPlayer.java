@@ -1,14 +1,12 @@
-package communicator2;
+package communicator2004;
 import battlecode.common.*;
 
 import java.util.*;
 
 public class RobotPlayer {
 	static int roundCount = 0;
-
 	
 	public static void run(RobotController rc) {	
-		OpponentModel om = new OpponentModel();
 		RobotType type = rc.getType();
 		try{
 			switch (type) {
@@ -25,7 +23,7 @@ public class RobotPlayer {
 				}
 			case PASTR:
 				while(true){
-					PastrBehaviour.Pastr(rc);
+					
 					rc.yield();
 				}
 			default:

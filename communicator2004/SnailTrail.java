@@ -1,7 +1,8 @@
-package communicator2;
+package communicator2004;
 
 import java.util.Arrays;
 
+import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
@@ -12,7 +13,7 @@ public class SnailTrail {
 	
 	public static Direction[] directions = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST};
 	
-	final static int tailLength = 50;
+	static int tailLength =1;
 	
 	static int[][] tail;
 	static LinkedList ll;
@@ -22,6 +23,7 @@ public class SnailTrail {
 		tail = new int[rc.getMapHeight()+1][rc.getMapWidth()+1];
 		ll = new LinkedList();
 	}
+	
 	public static void move(MapLocation destination, MapLocation currentPos,RobotController rc) throws GameActionException{
 		if(currentPos.equals(destination)){
 			return;
@@ -33,6 +35,9 @@ public class SnailTrail {
 		if(move != null){
 			tail[move.y][move.x] = 1;
 			ll.addItem(move.x, move.y);
+		}else{
+			tail[currentPos.y][currentPos.x] = 1;
+			ll.addItem(currentPos.x, currentPos.y);
 		}
 	}
 	public static MapLocation helper(MapLocation destination, MapLocation currentPos,RobotController rc) throws GameActionException{
@@ -92,7 +97,7 @@ public class SnailTrail {
 				return loc;
 			}
 		}
-		ll.removeLast();
+//		ll.removeLast();
 		return null;
 	}
 	public static class LinkedList{
@@ -159,7 +164,7 @@ public class SnailTrail {
 			if(end != null){
 				tail[end.y][end.x] = 0; 
 				end = end.prev;
-				if(end.next != null){
+				if(end != null){
 					end.next = null;
 				}
 				count --;
@@ -180,12 +185,89 @@ public class SnailTrail {
 			}
 		}
 	}
+	
 	public static void printTail(){
 		System.out.println("___");
 		for(int i = 0; i < tail.length; i ++){
 			System.out.println(Arrays.toString(tail[i]));
 		}
 		System.out.println("____");
+	}
+	public static void sneak(MapLocation destination, MapLocation currentPos,RobotController rc) throws GameActionException{
+		if(currentPos.equals(destination)){
+			return;
+		}
+		if(tail == null){
+			init(rc);
+		}
+		MapLocation move = helperSneak(destination,currentPos,rc);
+		if(move != null){
+			tail[move.y][move.x] = 1;
+			ll.addItem(move.x, move.y);
+		}else{
+			tail[currentPos.y][currentPos.x] = 1;
+			ll.addItem(currentPos.x, currentPos.y);
+		}
+	}
+	public static MapLocation helperSneak(MapLocation destination, MapLocation currentPos,RobotController rc) throws GameActionException{
+		if(!rc.isActive()){
+			return null;
+		}
+		
+		Direction target = currentPos.directionTo(destination);
+		if(rc.canMove(target)){
+			MapLocation loc = currentPos.add(target);
+			if(tail[loc.y][loc.x]!=1){
+				rc.sneak(target);
+//				tail[loc.y][loc.x] = 1;
+//				ll.addItem(loc.x, loc.y);
+				return loc;
+			}
+//			tail[loc.y][loc.x] = 1;
+//			ll.addItem(loc.x, loc.y);
+		}
+		int left = target.ordinal();
+		int right = left;
+		Direction tryToMove;
+		left = (left+1)%8;
+		right = (right+7)%8;
+		while(left != right){
+			tryToMove = directions[left];
+			MapLocation loc = currentPos.add(tryToMove);
+			
+			if((loc.x >= 0 && loc.y >= 0)&&tail[loc.y][loc.x]!=1 ){		
+//				tail[loc.y][loc.x] = 1;
+//				ll.addItem(loc.x, loc.y);
+				if(rc.canMove(tryToMove)){
+					rc.sneak(tryToMove);
+					return loc;
+				}
+			}
+			tryToMove = directions[right];
+			loc = currentPos.add(tryToMove);
+			if((loc.x >= 0 && loc.y >= 0)&&tail[loc.y][loc.x]!=1 ){		
+//				tail[loc.y][loc.x] = 1;
+//				ll.addItem(loc.x, loc.y);
+				if(rc.canMove(tryToMove)){
+					rc.sneak(tryToMove);
+					return loc;
+				}
+			}
+			left = (left+1)%8;
+			right = (right+7)%8;
+		}
+		tryToMove = directions[left];
+		MapLocation loc = currentPos.add(tryToMove);
+		if((loc.x >= 0 && loc.y >= 0)&&tail[loc.y][loc.x]!=1 ){		
+//			tail[loc.y][loc.x] = 1;
+//			ll.addItem(loc.x, loc.y);
+			if(rc.canMove(tryToMove)){
+				rc.sneak(tryToMove);
+				return loc;
+			}
+		}
+//		ll.removeLast();
+		return null;
 	}
 }
 

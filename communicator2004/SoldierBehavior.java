@@ -1,4 +1,4 @@
-package communicator2;
+package communicator2004;
 
 import java.util.Random;
 
@@ -9,18 +9,22 @@ public class SoldierBehavior {
 	
 	static Direction[] directions = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST};
 	
-	public static OpponentModel om = new OpponentModel();
+	
 	static int[][] map;
 	static int width,height;
 	static int currentCommand;
 	static MapLocation target;
 	static MapLocation backup;
+	static Random rand;
+	static int groupNum;
+	static MapLocation linePoint1, linePoint2, lineMiddlePoint;
+	
 	
 	/**
 	 * These states are representing the the logical areas of a soldier.
 	 */
 	private enum SoldierState{
-		SPAWN,WAITING_FOR_COMMAND,BUILD_PASTR, ASSEMBLE, FLEEING,SCOUTING;
+		SPAWN,WAITING_FOR_COMMAND,BUILD_PASTR, ASSEMBLE, FLEEING,SCOUTING,GROUP_MOVEMENT,FARMING_MODE, FORMATION_MOVE;
 	}
 	
 	/**
@@ -35,17 +39,22 @@ public class SoldierBehavior {
 	/** the ID of the soldier which is necessary for the communication **/
 	public static int iD;
 	
+	
+	public static int health;
 	/**
 	 * The entire logic of the soldier which is processed every round
 	 * @param rc
 	 * @throws Exception
 	 */
 	public static void run(RobotController rc) throws Exception{
+		rc.setIndicatorString(0, state.toString() + " " + iD + " " +  rc.readBroadcast(StaticVariables.ROBOT_COMMAND_CHANNEL_START+(iD-1)));
 		count = count % 10;
-		om.scoutingData(rc);
+		
+		health = (int) rc.getHealth();
+		
 		//rc.setIndicatorString(0, ""+ currentCommand + " " + (state == SoldierState.SPAWN?"waitsforID":"") + (state == SoldierState.WAITING_FOR_COMMAND?"waitsforCommand":"") +  (state == SoldierState.BUILD_PASTR?"tries to build pastr":""));
 		// if the health of the soldier is below a certain threshold than switch to a fleeing state.
-		if(rc.getHealth() <= StaticVariables.ROBOT_FLEEING_HEALTH_THRESHOLD){
+		if(health <= StaticVariables.ROBOT_FLEEING_HEALTH_THRESHOLD){
 			state = SoldierState.FLEEING;
 			currentCommand = 0;
 		}
@@ -65,10 +74,14 @@ public class SoldierBehavior {
 		//Then he switches to the waiting-for-command state.
 		if(state == SoldierState.SPAWN){
 			if(!tryToShoot(rc)){
+				if(rand == null){
+					rand = new Random(rc.getRobot().getID());
+				}
 				moveRandomly(rc);
 			}
 			iD = obtainID(rc);
 			if(iD != 0){
+				rand = new Random(iD);
 				state = SoldierState.WAITING_FOR_COMMAND;
 				backup = rc.getLocation();
 			}
@@ -113,17 +126,100 @@ public class SoldierBehavior {
 		//Looks always for new commands.
 		else if(SoldierState.BUILD_PASTR == state){
 			count ++;
+			if(rc.isConstructing()){
+				health = 100;
+			}
 			broadcastFeedback(rc);
 			if(!tryToShoot(rc)){
 				if(rc.getLocation().equals(target) && rc.isActive()){
 					rc.construct(RobotType.PASTR);
 				}	
-				SnailTrail.move(target, rc.getLocation(), rc);;
+				SnailTrail.move(target, rc.getLocation(), rc);
 				lookForCommand(rc);
 				
 			}
 		}
+		// This is almost the same behavior as for ASSEMBLE. The difference is that the soldier sometimes
+		// moves randomly based on StaticVariables.PROBABILITY_GROUP_MOVE_RANDOM_MOVE
+		else if(SoldierState.GROUP_MOVEMENT == state){
+			count ++;
+			broadcastFeedback(rc);
+			if(rc.isActive()){
+				if(!tryToShoot(rc)){
+					if(rand.nextFloat() < StaticVariables.PROBABILITY_GROUP_MOVE_RANDOM_MOVE){
+						moveRandomly(rc);
+					}else{
+						SnailTrail.move(target, rc.getLocation(), rc);
+					}
+					lookForCommand(rc);
+				}
+			}
+		}
+		
+		//
+		else if(SoldierState.FARMING_MODE == state){
+			count ++;
+			broadcastFeedback(rc);
+			if(rc.isActive()){
+				if(!tryToShoot(rc)){
+					if(rand.nextFloat() < 0.6f){
+						shootToCollectCows(rc,target);
+					}
+					if(rand.nextFloat() < 0.5){
+						sneakRandomly(rc);
+					}else{
+						SnailTrail.sneak(target, rc.getLocation(), rc);
+					}
+					lookForCommand(rc);
+				}
+			}
+		}
+		else if(SoldierState.FORMATION_MOVE == state){
+			count ++;
+			broadcastFeedback(rc);
+			if(rc.isActive()){
+				if(!tryToShoot(rc)){
+					formationMove(rc);
+					lookForCommand(rc);
+				}
+			}
+		}
 	}
+	public static void shootToCollectCows(RobotController rc, MapLocation pastrLoc) throws GameActionException{
+		if(rc.isActive()){
+			MapLocation currLoc = rc.getLocation();
+			int dist = currLoc.distanceSquaredTo(pastrLoc);
+			if(dist <= 16 && dist >= 9){
+				int x = -(pastrLoc.x-currLoc.x);
+				int y = -(pastrLoc.y-currLoc.y);
+				MapLocation target = currLoc.add(x*3, y*3);
+				Direction dir = currLoc.directionTo(target);
+				MapLocation shootingPos = currLoc.add(dir, 3);
+				if(shootingPos.distanceSquaredTo(currLoc) > 9){
+					shootingPos = shootingPos.subtract(dir);
+				}
+				rc.attackSquare(shootingPos);
+			}
+		}
+	}
+	public static void formationMove(RobotController rc) throws GameActionException{
+		MapLocation curr = rc.getLocation();
+		readLineFormation(rc);
+		MapLocation to = StaticFunctions.getPointOnLine(curr.x,curr.y, linePoint1.x, linePoint1.y, linePoint2.x, linePoint2.y);
+		if(curr.equals(to) || to.equals(linePoint1) || to.equals(linePoint2)){
+			to = SoldierBehavior.lineMiddlePoint;
+			if(rc.isActive()){
+				Direction dir = rc.getLocation().directionTo(to);
+				if(rc.canMove(dir)){
+					rc.move(dir);
+				}
+			}
+		}else{
+
+			SnailTrail.move(to,rc.getLocation(), rc);
+		}
+	}
+	
 	
 	/**
 	 * The soldier reads the command-channel which is indexed by the soldiers ID.
@@ -137,10 +233,21 @@ public class SoldierBehavior {
 		if(command != currentCommand){
 			currentCommand = command;
 			target = StaticFunctions.intToLoc(command);
-			state = interpreteCommand(command/10000);
+			state = interpretCommand(command/100000);
 		}
 	}
-	
+	public static void readLineFormation(RobotController rc) throws GameActionException{
+		int channel = StaticVariables.ROBOT_GROUP_COMMAND_CHANNEL_START+(groupNum*StaticVariables.GROUP_CHANNEL_LENGTH_PER_GROUP);
+		SoldierBehavior.linePoint1 = StaticFunctions.intToLoc(rc.readBroadcast(channel));
+		SoldierBehavior.linePoint2 = StaticFunctions.intToLoc(rc.readBroadcast(channel+1));
+		SoldierBehavior.lineMiddlePoint = StaticFunctions.intToLoc(rc.readBroadcast(channel+2));
+		if(Clock.getRoundNum()<20){
+			System.out.println(linePoint1 + " " + linePoint2 + " " + lineMiddlePoint);
+		}
+	}
+	public static void getGroupNumber(){
+		groupNum = (currentCommand/10000)%10;
+	}
 	/**
 	 * Writes the current maplocation and lifecount into a feedback channel which is analyzed by the HQ.
 	 * @param rc
@@ -148,25 +255,33 @@ public class SoldierBehavior {
 	 */
 	public static void broadcastFeedback(RobotController rc) throws Exception{
 		MapLocation mL = rc.senseRobotInfo(rc.getRobot()).location;
-		rc.broadcast(StaticVariables.ROBOT_FEEDBACK_CHANNEL_START+(iD-1), (count + (mL.y*10)+(mL.x*1000)));
+		int feedback =(mL.x*100)+mL.y;
+		feedback += Math.max(0, health-1)*10000;
+		feedback += count *1000000;
+		rc.broadcast(StaticVariables.ROBOT_FEEDBACK_CHANNEL_START+(iD-1),feedback);
 	}
-
-	public static void moveRandomly(RobotController rc) throws Exception{
-		Direction moveDirection = directions[(int) (Math.random()*8)];
+	public static void sneakRandomly(RobotController rc) throws Exception{
+		Direction moveDirection = directions[(int) (rand.nextFloat()*8f)];
 		if (rc.isActive() && rc.canMove(moveDirection)) {
 			rc.sneak(moveDirection);
+		}
+	}
+	public static void moveRandomly(RobotController rc) throws Exception{
+		Direction moveDirection = directions[(int) (rand.nextFloat()*8f)];
+		if (rc.isActive() && rc.canMove(moveDirection)) {
+			rc.move(moveDirection);
 		}
 	}
 	public static void moveToEnemyHQ(RobotController rc) throws Exception{
 		Direction toEnemy = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
 		if (rc.isActive() && rc.canMove(toEnemy)) {
-			rc.sneak(toEnemy);
+			rc.move(toEnemy);
 		}
 	}
 	public static boolean moveToLoc(MapLocation loc, RobotController rc) throws Exception{
 		Direction toDest = rc.getLocation().directionTo(loc);
 		if (rc.isActive() && rc.canMove(toDest)) {
-			rc.sneak(toDest);
+			rc.move(toDest);
 			return true;
 		}else{
 			return false;
@@ -233,7 +348,7 @@ public class SoldierBehavior {
 	 * @param command
 	 * @return
 	 */
-	public static SoldierState interpreteCommand(int command){
+	public static SoldierState interpretCommand(int command){
 		SoldierState next = SoldierState.WAITING_FOR_COMMAND;
 		switch(command){
 		case StaticVariables.COMMAND_ASSEMBLE_AT_LOCATION:
@@ -244,6 +359,14 @@ public class SoldierBehavior {
 			return SoldierState.BUILD_PASTR;
 		case StaticVariables.COMMAND_SCOUT_LOCATION:
 			return SoldierState.SCOUTING;
+		case StaticVariables.COMMAND_GROUP_MOVE_TO_LOCATION:
+			return SoldierState.GROUP_MOVEMENT;
+		case StaticVariables.COMMAND_FARMING_MODE:
+			return SoldierState.FARMING_MODE;
+		case StaticVariables.COMMAND_FORMATION_MOVE:
+			getGroupNumber();
+			return SoldierState.FORMATION_MOVE;
+		
 		}
 		return next;
 	}
