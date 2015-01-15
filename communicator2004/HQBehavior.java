@@ -24,6 +24,8 @@ public class HQBehavior {
 	public static MapLocation enemyHQ;
 	public static MapLocation thisPos;
 
+	public static MapLocation[] pastrs = new MapLocation[2];
+
 	/** The current state of the HQ. Allows to separate logical areas**/
 	public static HQState state = HQState.INIT;
 
@@ -73,12 +75,24 @@ public class HQBehavior {
 			updateInteralRobotRepresentation(rc);
 			buildOpponentModel(robots, rc);
 			adaptToOpponent(rc, groups);
+			pastrs = rc.sensePastrLocations(rc.getTeam());
 			groups[2].sendCommandToGroup(MapMaker.bestFound, StaticVariables.COMMAND_BUILD_PASTR, rc);
 			groups[3].sendCommandToGroup(MapMaker.secondBestFound, StaticVariables.COMMAND_BUILD_PASTR, rc);
 			groups[0].assignToOtherGroup(rc, groups[1], 0, 18);
-			groups[1].sendCommandToGroup(assemblyPositions[0], StaticVariables.COMMAND_ASSEMBLE_AT_LOCATION, rc);
+			groups[1].sendCommandToGroup(rc.senseEnemyHQLocation(), StaticVariables.COMMAND_ATTACK_LOCATION, rc);
+			if(pastrs.length >=1){
 
-
+				groups[4].sendCommandToGroup(pastrs[0], StaticVariables.COMMAND_ASSEMBLE_AT_LOCATION, rc);
+			}
+			if(pastrs.length >=2){
+				groups[5].sendCommandToGroup(pastrs[1], StaticVariables.COMMAND_ASSEMBLE_AT_LOCATION, rc);
+			}
+			System.out.println("Group 0 size " +groups[0].getSize() );
+			System.out.println("Group 1 size " +groups[1].getSize() );
+			System.out.println("Group 2 size " +groups[2].getSize() );
+			System.out.println("Group 3 size " +groups[3].getSize() );
+			System.out.println("Group 4 size " +groups[4].getSize() );
+			System.out.println("Group 5 size " +groups[5].getSize() );
 
 			break;
 		}
@@ -181,10 +195,10 @@ public class HQBehavior {
 		for (int i = 0; i < bots.length; i++){
 			if(bots[i] != null){
 				newHealth = bots[i].getHealth();
-				if(newHealth < health && opponentModel < 1){
+				if(newHealth < health ){
 					opponentModel =+ 0.005;
 				}
-				else if((newHealth >= health && opponentModel > 1) ){
+				else if((newHealth >= health ) ){
 					opponentModel =- 0.005;
 				}
 			}
@@ -203,7 +217,9 @@ public class HQBehavior {
 			opponentModel =- 0.005;
 		}
 		System.out.println("Current opponent model: " + opponentModel);
-
+		opponentModel = Math.max(0,  opponentModel);
+		opponentModel = Math.min(1, opponentModel);
+		System.out.println("Current opponent model ranged: " + opponentModel);
 
 	}
 
@@ -211,30 +227,42 @@ public class HQBehavior {
 		int count = rc.senseRobotCount();
 		if(rc.senseTeamMilkQuantity(rc.getTeam()) < rc.senseTeamMilkQuantity(rc.getTeam().opponent()))
 		{
-			System.out.println("Opponent has more milk :(");
+			//System.out.println("Opponent has more milk :(");
 			groups[1].sendCommandToGroup(rc.sensePastrLocations(rc.getTeam().opponent())[0],StaticVariables.COMMAND_ATTACK_LOCATION , rc);
-			
+
 		}
 
 		if(opponentModel <= 0.5){//Defensive
-			System.out.println("Defensive");
-			System.out.println("Adding to group 2"); //Group 2-6 is PASTR building
-			if(groups[2].getSize() == 0){
+			//System.out.println("Defensive");
+			//System.out.println("Adding to group 2"); //Group 2-3 is PASTR building
+
+			if(groups[2].getSize() == 0 && (pastrs.length ==0)){
 				groups[1].assignToOtherGroup(rc, groups[2], 1, 1);
 			}
-			else if(groups[3].getSize() == 0){
-				System.out.println("Adding to group 3");
+			if(groups[3].getSize() == 0 && (pastrs.length ==1)){
+				//System.out.println("Adding to group 3");
 				groups[1].assignToOtherGroup(rc, groups[3], 1, 1);
 			}
 
 		}else{//agressive
-			System.out.println("Agressive");
+			//System.out.println("Agressive");
 			if(groups[2].getSize() == 0){
 				groups[1].assignToOtherGroup(rc, groups[2], 1, 1);
 			}
+			if(groups[3].getSize() == 0){
+				//System.out.println("Adding to group 3");
+				groups[1].assignToOtherGroup(rc, groups[3], 1, 1);
+			}
 			if(groups[1].getSize() < count -1){
-				System.out.println("Adding to group 1"); //Group 1 is attacking
+				//System.out.println("Adding to group 1"); //Group 1 is attacking
 				groups[2].assignToOtherGroup(rc, groups[1], 1, 1);
+			}
+			//group 4 and five are pastr guarding
+			if(groups[5].getSize() < 6 && pastrs.length == 1){
+				groups[1].assignToOtherGroup(rc, groups[5], 1, 1);
+			}
+			if(groups[4].getSize() < 6 && pastrs.length == 2){
+				groups[1].assignToOtherGroup(rc, groups[4], 1, 1);
 			}
 		}
 	}
