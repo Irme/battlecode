@@ -243,6 +243,13 @@ public class HQBehavior {
 				//System.out.println("Adding to group 3");
 				groups[1].assignToOtherGroup(rc, groups[3], 1, 1);
 			}
+			//group 4 and five are pastr guarding
+			if(groups[5].getSize() < 6 && pastrs.length == 1){
+				groups[1].assignToOtherGroup(rc, groups[5], 1, 1);
+			}
+			if(groups[4].getSize() < 6 && pastrs.length == 2){
+				groups[1].assignToOtherGroup(rc, groups[4], 1, 1);
+			}
 
 		}else{//agressive
 			//System.out.println("Agressive");
