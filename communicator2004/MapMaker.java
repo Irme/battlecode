@@ -13,7 +13,8 @@ import battlecode.common.*;
  * it is not robust.
  * 
  * 
- * @author Alexander Bartl
+ * @author Alexander Bartl, Irme Groothuis
+ * 
  *
  */
 public class MapMaker {
@@ -22,6 +23,9 @@ public class MapMaker {
 	public static double[][] growths;
 	public static MapLocation bestFound = null;
 	public static MapLocation secondBestFound = null;
+	public static MapLocation thirdBestFound = null;
+	public static double secondBestGrowth = -Double.MAX_VALUE;
+	public static double thirdBestGrowth = -Double.MAX_VALUE;
 	public static double bestGrowth = -Double.MAX_VALUE;
 	public static int searchProgress = 0;
 
@@ -71,14 +75,25 @@ public class MapMaker {
 				currGrowth += growths[x][y];
 				if(currGrowth > bestGrowth){
 					bestGrowth = currGrowth;
-					if(bestFound != null){
-						secondBestFound = new MapLocation(x,y);
-					} else{
-						bestFound = new MapLocation(x,y);
-					}
+					bestFound = new MapLocation(x, y);
+				} else if (currGrowth > secondBestGrowth && euclidianDistance(x, y, bestFound.x, bestFound.y) > 4){
+					secondBestGrowth = currGrowth;
+					secondBestFound = new MapLocation(x, y);
+				}else if(currGrowth > thirdBestGrowth && euclidianDistance(x, y, bestFound.x, bestFound.y) > 4){
+					thirdBestGrowth = currGrowth;
+					thirdBestFound = new MapLocation(x, y);
+					
 				}
 			}
 		}
 		System.out.println(Clock.getRoundNum() + " finished");
 	}
+	
+	public static double euclidianDistance( int x, int y, int otherx, int othery){
+		int xtemp = Math.abs(x-otherx);
+		int ytemp = Math.abs(y-othery);
+		return Math.sqrt(xtemp*xtemp + ytemp*ytemp);
+	}
 }
+
+
