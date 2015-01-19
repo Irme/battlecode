@@ -946,6 +946,7 @@ public class SoldierBehavior {
 		int channel = StaticVariables.ROBOT_GROUP_COMMAND_CHANNEL_START+(groupNum*StaticVariables.GROUP_CHANNEL_LENGTH_PER_GROUP);
 		int build = rc.readBroadcast(channel+13);
 		if(build == 1){
+			System.out.println(new MapLocation(rc.readBroadcast(channel+14),rc.readBroadcast(channel+15)));
 			if(thisPos.equals(new MapLocation(rc.readBroadcast(channel+14),rc.readBroadcast(channel+15)))){
 				return 1;
 			}

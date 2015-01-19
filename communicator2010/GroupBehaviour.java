@@ -13,6 +13,7 @@ public class GroupBehaviour {
 	public Group group;
 	int index;
 	int counter;
+	int add;
 	public MapLocation target,start;
 	MapLocation[] path;
 	RobotController rc;
@@ -79,6 +80,7 @@ public class GroupBehaviour {
 		counter = 0;
 		path = Astar.search(rc, start, target);
 		int to = Math.max(0, add);
+		this.add = add;
 		for(int i = 0; i < to; i ++){
 			addOneToPath();
 		}
@@ -187,8 +189,8 @@ public class GroupBehaviour {
 	}
 	public void sendBuildCommandIfAppropiate(RobotController rc) throws GameActionException{
 		if(progress == 1 && dis <= 8 && pressure == 0 && group.getSize() >= 10){
-			sendBuildingCommand(rc,group,path[path.length-2],true);
-			sendBuildingCommand(rc,group,path[path.length-3],false);
+			sendBuildingCommand(rc,group,path[path.length-2-add],true);
+			sendBuildingCommand(rc,group,path[path.length-3-add],false);
 			broadCastMoveTypeToGroup(rc,group,true);
 		}else{
 			eraseBuildingCommand(rc,group);
